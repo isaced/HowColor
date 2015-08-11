@@ -22,10 +22,13 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
     // ---
     
     /// 当前级别
-    var level : Int = 1
+    var level : Int = 0
     
     /// 倒计时秒数
     var countdown : Int = 60
+    
+    /// 计时器
+    var timer : NSTimer!
     
     /// 块宽度
     var tileWidht : CGFloat = 0
@@ -49,8 +52,11 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
         tileCollectionView.layer.cornerRadius = 8.0
         tileCollectionView.contentInset = UIEdgeInsetsMake(5, 5, 5, 5)
         
+        // 重置计时器
+        refreshTimeLabel()
+        
         // 计时开始
-        var timer = NSTimer(timeInterval: 1, target: self, selector: Selector("increaseTimerCount"), userInfo: nil, repeats: true)
+        timer = NSTimer.scheduledTimerWithTimeInterval(1, target: self, selector: Selector("increaseTimerCount"), userInfo: nil, repeats: true)
         
         // 根据不同屏幕决定方块数量和大小
         if Device.IS_3_5_INCHES() {
@@ -68,9 +74,9 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
         }
         
         // 生成颜色
-        self.GenerateColorForLevel(level)
+        generateColorForLevel(level)
         
-        self.tileCollectionView.reloadData()
+        tileCollectionView.reloadData()
     }
 
     override func didReceiveMemoryWarning() {
@@ -105,9 +111,9 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
             
             level = level + 1
             
-            scoreLabel.text = "\(level)"
+            refreshScoreLabel()
             
-            self.GenerateColorForLevel(level);
+            generateColorForLevel(level);
             
             // reload CollectionView (使用 reloadSections 会有个默认渐显动画)
             tileCollectionView.reloadSections(NSIndexSet(index: 0))
@@ -117,14 +123,64 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
     // MARK: -
     
     @IBAction func goBackAction(sender: UIBarButtonItem) {
+        
+        // Timer invalidate
+        if timer.valid {
+            timer.invalidate()
+        }
+        
+        // Dismiss
         self.dismissViewControllerAnimated(true, completion: nil)
     }
     
-    func increaseTimerCount() {
-        
+    /**
+    刷新分数标签
+    */
+    func refreshScoreLabel() {
+        scoreLabel.text = "\(level)"
     }
+    
+    /**
+    刷新倒计时标签
+    */
+    func refreshTimeLabel() {
+        timeButton.setTitle("\(countdown)", forState: .Normal)
+    }
+    
+    /**
+    计时循环
+    */
+    func increaseTimerCount() {
+        countdown = countdown - 1
+        
+        refreshTimeLabel()
+        
+        // Time Over
+        if self.countdown == 0 {
+            timer.invalidate()
+            timerOver()
+        }
+    }
+    
+    /**
+    时间到
+    */
+    func timerOver() {
+        let alert = UIAlertController(title: "Game Over", message: nil, preferredStyle: .Alert)
+        self.presentViewController(alert, animated: true, completion: nil)
+        
 
-    func GenerateColorForLevel(level:Int) {
+        let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(2 * Double(NSEC_PER_SEC)))
+        dispatch_after(delayTime, dispatch_get_main_queue()) {
+            alert.dismissViewControllerAnimated(true, completion: nil)
+            self.dismissViewControllerAnimated(true, completion: nil)
+        }
+    }
+    
+    /**
+    根据游戏等级生成颜色
+    */
+    func generateColorForLevel(level:Int) {
         let r = CGFloat(arc4random() % 255)
         let g = CGFloat(arc4random() % 255)
         let b = CGFloat(arc4random() % 255)
