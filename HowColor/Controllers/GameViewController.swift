@@ -27,8 +27,18 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
     /// 倒计时秒数
     var countdown : Int = 60
     
+    /// 块宽度
     var tileWidht : CGFloat = 0
-    var tileNum : Int = 0
+    
+    /// 块数量
+    var tileCount : Int = 0
+    
+    /// 颜色
+    var colorA : UIColor!
+    var colorB : UIColor!
+    
+    /// 随机颜色的位置
+    var ranmodColorIndex : Int = 0
     
     // MARK: -
     
@@ -45,17 +55,22 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
         // 根据不同屏幕决定方块数量和大小
         if Device.IS_3_5_INCHES() {
             tileWidht = 56.0
-            tileNum = 20
+            tileCount = 20
         }else if Device.IS_4_INCHES() {
             tileWidht = 60.0
-            tileNum = 24
+            tileCount = 24
         }else if Device.IS_4_7_INCHES() {
             tileWidht = 63.0
-            tileNum = 28
+            tileCount = 28
         }else if Device.IS_5_5_INCHES() {
             tileWidht = 63.0
-            tileNum = 40
+            tileCount = 40
         }
+        
+        // 生成颜色
+        self.GenerateColorForLevel(level)
+        
+        self.tileCollectionView.reloadData()
     }
 
     override func didReceiveMemoryWarning() {
@@ -66,7 +81,7 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
     // MARK: -
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return tileNum
+        return tileCount
     }
     
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
@@ -76,9 +91,27 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         var cell = collectionView.dequeueReusableCellWithReuseIdentifier("cell", forIndexPath: indexPath) as! UICollectionViewCell
         
-        cell.backgroundColor = UIColor.redColor()
+        if indexPath.row == self.ranmodColorIndex {
+            cell.backgroundColor = colorB;
+        }else{
+            cell.backgroundColor = colorA;
+        }
 
         return cell
+    }
+    
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        if indexPath.row == self.ranmodColorIndex {
+            
+            level = level + 1
+            
+            scoreLabel.text = "\(level)"
+            
+            self.GenerateColorForLevel(level);
+            
+            // reload CollectionView (使用 reloadSections 会有个默认渐显动画)
+            tileCollectionView.reloadSections(NSIndexSet(index: 0))
+        }
     }
     
     // MARK: -
@@ -91,4 +124,18 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
         
     }
 
+    func GenerateColorForLevel(level:Int) {
+        let r = CGFloat(arc4random() % 255)
+        let g = CGFloat(arc4random() % 255)
+        let b = CGFloat(arc4random() % 255)
+        
+        colorA = UIColor(red: r / 255.0, green: g / 255.0, blue: b / 255.0, alpha: 1)
+        
+        // 从基数 0.2 开始递增，增量为 0.03 * Level
+        let alpha = 0.2 + (0.03 * CGFloat(level));
+        
+        colorB = colorA.colorWithAlphaComponent(alpha)
+        
+        ranmodColorIndex = Int(arc4random()) % tileCount;
+    }
 }
