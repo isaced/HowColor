@@ -169,6 +169,8 @@ class GameViewController: UIViewController , UICollectionViewDataSource , UIColl
         let alert = UIAlertController(title: "Game Over", message: nil, preferredStyle: .Alert)
         self.presentViewController(alert, animated: true, completion: nil)
         
+        // Save Score
+        UserDefaults.saveBestScore(level)
 
         let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(2 * Double(NSEC_PER_SEC)))
         dispatch_after(delayTime, dispatch_get_main_queue()) {
